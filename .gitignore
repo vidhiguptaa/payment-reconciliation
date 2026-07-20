@@ -1,0 +1,69 @@
+# ==========================
+# Node / Frontend
+# ==========================
+node_modules/
+dist/
+dist-ssr/
+*.local
+.eslintcache
+
+# Application runtime data
+data/
+
+# ==========================
+# Python / Backend
+# ==========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.pytest_cache/
+.mypy_cache/
+
+# ==========================
+# SQLite
+# ==========================
+*.db
+*.sqlite
+*.sqlite3
+backend/reconciliation.db
+
+# ==========================
+# Environment Variables
+# ==========================
+.env
+!.env.example
+frontend/.env
+!frontend/.env.example
+backend/.env
+!backend/.env.example
+
+# ==========================
+# Tauri / Rust
+# ==========================
+src-tauri/target/
+target/
+
+# Build artifacts
+*.dmg
+*.app
+*.msi
+*.exe
+
+# Python virtual environment (if embedded)
+src-tauri/resources/python/
+
+# ==========================
+# macOS / Editor
+# ==========================
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
