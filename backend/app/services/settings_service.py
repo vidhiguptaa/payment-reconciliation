@@ -28,7 +28,6 @@ class UserSettings:
 
     # OCR Configuration
     ocr_provider: str = "paddleocr"
-    gemini_api_key: str = ""
     tesseract_path: str = ""
     paddle_language: str = "en"
 

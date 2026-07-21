@@ -1,7 +1,6 @@
 from typing import Optional, Dict, Type
 from app.config import settings
 from app.services.ocr.base import BaseOCRProvider
-from app.services.ocr.providers.gemini_provider import GeminiOCRProvider
 from app.services.ocr.providers.tesseract_provider import TesseractOCRProvider
 from app.services.ocr.providers.paddle_provider import PaddleOCRProvider
 
@@ -10,7 +9,6 @@ class OCRProviderFactory:
         "paddle": PaddleOCRProvider,
         "paddleocr": PaddleOCRProvider,
         "tesseract": TesseractOCRProvider,
-        "gemini": GeminiOCRProvider,
     }
 
     @classmethod

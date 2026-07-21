@@ -94,7 +94,6 @@ class Settings(BaseSettings):
 
     # OCR Configuration Settings
     OCR_PROVIDER: str = "paddle"
-    GOOGLE_API_KEY: str = ""
     TESSERACT_PATH: str = ""
     PADDLE_LANGUAGE: str = "en"
 
