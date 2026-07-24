@@ -10,28 +10,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 
-def get_app_data_dir() -> Path:
-    """Return OS-specific or environment-configured application data directory."""
-    env_dir = os.getenv("APP_DATA_DIR")
-    if env_dir:
-        dir_path = Path(env_dir).resolve()
-    elif sys.platform == "win32":
-        app_data = os.getenv("APPDATA")
-        base = Path(app_data) if app_data else Path.home() / "AppData" / "Roaming"
-        dir_path = base / "PaymentReconciliation"
-    elif sys.platform == "darwin":
-        base = Path.home() / "Library" / "Application Support"
-        dir_path = base / "PaymentReconciliation"
-    else:
-        base = Path.home() / ".local" / "share"
-        dir_path = base / "PaymentReconciliation"
-
-    dir_path.mkdir(parents=True, exist_ok=True)
-    return dir_path
-
-
-APP_DATA_DIR = get_app_data_dir()
-DB_PATH = APP_DATA_DIR / "reconciliation.db"
+DATA_ROOT = Path(os.getenv("DATA_ROOT", "./data")).resolve()
+DB_PATH = DATA_ROOT / "reconciliation.db"
+DATA_ROOT.mkdir(parents=True, exist_ok=True)
 
 
 def migrate_legacy_database(target_db_path: Path) -> None:
@@ -68,13 +49,16 @@ selected_env_file = str(config_env_file) if config_env_file.exists() else (str(d
 DEFAULT_CORS_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5174",
+    "http://localhost:5175",
+    "http://127.0.0.1:5175",
     "http://localhost:1420",
     "http://127.0.0.1:1420",
     "https://tauri.localhost",
     "tauri://localhost",
     "http://tauri.localhost",
     "http://localhost:8000",
-    "*",
 ]
 
 
@@ -83,14 +67,14 @@ class Settings(BaseSettings):
     APP_VERSION: str = "0.1.0"
     APP_ENV: str = env_name
     DEBUG: bool = False
-    APP_DATA_DIR: str = str(APP_DATA_DIR)
+    DATA_ROOT: Path = DATA_ROOT
     DATABASE_URL: str = f"sqlite:///{DB_PATH}"
     CORS_ORIGINS: Union[list[str], str] = DEFAULT_CORS_ORIGINS
 
-    SCREENSHOTS_DIR: str = str(BASE_DIR / "data" / "payment-screenshots")
-    STATEMENTS_DIR: str = str(BASE_DIR / "data" / "account-statements")
-    THUMBNAILS_DIR: str = str(BASE_DIR / "data" / "thumbnails")
-    FRONTEND_DIST_DIR: str = str(BASE_DIR / "frontend" / "dist")
+    SCREENSHOTS_DIR: Path = DATA_ROOT / "payment-screenshots"
+    STATEMENTS_DIR: Path = DATA_ROOT / "account-statements"
+    THUMBNAILS_DIR: Path = DATA_ROOT / "thumbnails"
+    FRONTEND_DIST_DIR: Path = BASE_DIR / "frontend" / "dist"
 
     # OCR Configuration Settings
     OCR_PROVIDER: str = "paddle"

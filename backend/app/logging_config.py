@@ -18,12 +18,12 @@ from logging.handlers import RotatingFileHandler
 from datetime import datetime, timezone
 from pathlib import Path
 
-from app.config import APP_DATA_DIR, settings
+from app.config import DATA_ROOT, settings
 
-LOGS_DIR = Path(APP_DATA_DIR) / "logs"
+LOGS_DIR = Path(DATA_ROOT) / "logs"
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
-CRASH_REPORT_PATH = Path(APP_DATA_DIR) / "crash-report.txt"
+CRASH_REPORT_PATH = Path(DATA_ROOT) / "crash-report.txt"
 
 LOG_FORMAT = logging.Formatter(
     "%(asctime)s [%(levelname)s] %(name)s (%(filename)s:%(lineno)d): %(message)s"

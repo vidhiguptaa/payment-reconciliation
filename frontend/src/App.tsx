@@ -16,14 +16,21 @@ import {
   ScanSummary,
   JobsListResponse,
   getScreenshots,
-  scanScreenshots,
   processAllPending,
   getReconciliationMatches,
   checkHealth,
   getSettings,
   updateSettings
 } from './services/api';
-import { CheckCircle2, AlertCircle, Sparkles } from 'lucide-react';
+import { processScreenshotFolder, ProcessingProgress } from './services/folderPicker';
+import { 
+  CheckCircle2, 
+  AlertCircle, 
+  Sparkles, 
+  Loader2, 
+  Hash, 
+  ArrowUpCircle
+} from 'lucide-react';
 
 type TabType = 'screenshots' | 'statements' | 'reconciliation' | 'settings';
 
@@ -36,6 +43,7 @@ export function App() {
   const [processing, setProcessing] = useState<boolean>(false);
   const [selectedScreenshot, setSelectedScreenshot] = useState<ScreenshotItem | null>(null);
   const [isAboutOpen, setIsAboutOpen] = useState<boolean>(false);
+  const [uploadProgress, setUploadProgress] = useState<ProcessingProgress | null>(null);
 
   const [scanSummary, setScanSummary] = useState<ScanSummary | null>(null);
   const [jobSummary, setJobSummary] = useState<JobsListResponse | null>(null);
@@ -54,40 +62,36 @@ export function App() {
   }, []);
 
   const loadScreenshots = useCallback(async () => {
-    let attempts = 0;
-    let connected = false;
-
-    // Retry health check during startup before displaying offline warning
-    while (attempts < 15 && !connected) {
-      try {
-        const health = await checkHealth();
-        if (health && (health.status === 'ok' || health.status === 'degraded')) {
-          connected = true;
-          break;
-        }
-      } catch {
-        attempts++;
-        await new Promise((resolve) => setTimeout(resolve, 200));
-      }
-    }
-
     setLoading(true);
     try {
-      const res = await getScreenshots();
-      setScreenshots(res.items);
-
-      const reconRes = await getReconciliationMatches();
-      setMatchCounts({
-        matched: reconRes.matched_count,
-        possible: reconRes.possible_count,
-        review: reconRes.needs_review_count,
-        unmatched: reconRes.unmatched_count
-      });
+      // First verify backend is connected via health check
+      const health = await checkHealth();
+      if (!health || (health.status !== 'ok' && health.status !== 'degraded')) {
+        throw new Error('Backend health check returned invalid status');
+      }
 
       setErrorMessage(null);
+
+      // Backend is online, fetch app statistics and screenshots
+      try {
+        const [res, reconRes] = await Promise.all([
+          getScreenshots(),
+          getReconciliationMatches()
+        ]);
+
+        setScreenshots(res.items);
+        setMatchCounts({
+          matched: reconRes.matched_count,
+          possible: reconRes.possible_count,
+          review: reconRes.needs_review_count,
+          unmatched: reconRes.unmatched_count
+        });
+      } catch (dataErr) {
+        console.warn('Dashboard statistics failed to load, backend is connected:', dataErr);
+      }
     } catch (err: any) {
       console.error('Failed to load dashboard data:', err);
-      setErrorMessage('Connecting to backend engine... Make sure local server is initialized.');
+      setErrorMessage('Unable to connect to the Payment Reconciliation backend. Please check your network connection.');
     } finally {
       setLoading(false);
       setInitialBooting(false);
@@ -192,17 +196,55 @@ export function App() {
   }, [loadScreenshots]);
 
   const handleScanFolder = async () => {
-    setScanning(true);
-    setScanSummary(null);
     setErrorMessage(null);
+    setScanSummary(null);
     try {
-      const summary = await scanScreenshots();
-      setScanSummary(summary);
+      const result = await processScreenshotFolder(
+        (progress) => {
+          setUploadProgress(progress);
+        }
+      );
+      
+      if (result.total === 0) {
+        setUploadProgress(null);
+        return;
+      }
+      
+      setScanning(true);
       await loadScreenshots();
+      
+      // Start polling for processing status
+      let attempts = 0;
+      const interval = setInterval(async () => {
+        attempts++;
+        try {
+          const res = await getScreenshots();
+          const hasPending = res.items.some(
+            (item) => item.status === 'PENDING' || item.status === 'PROCESSING'
+          );
+          if (!hasPending || attempts > 60) {
+            clearInterval(interval);
+            setScanning(false);
+            setUploadProgress(null);
+            await loadScreenshots();
+            
+            setScanSummary({
+              total_scanned: result.total,
+              new_imported: result.uploaded,
+              skipped_duplicates: result.skipped,
+              unsupported_ignored: 0,
+              failed_errors: 0,
+              details: []
+            });
+          }
+        } catch (pollErr) {
+          console.error('Error polling screenshot status:', pollErr);
+        }
+      }, 2000);
+      
     } catch (err: any) {
       setErrorMessage(err.message || 'Scan folder operation failed.');
-    } finally {
-      setScanning(false);
+      setUploadProgress(null);
     }
   };
 
@@ -232,7 +274,7 @@ export function App() {
             Initializing Payment Engine
           </h2>
           <p className="text-xs text-slate-400 leading-relaxed">
-            Starting local backend and initializing reconciliation databases...
+            Connecting to remote payment reconciliation engine...
           </p>
           <div className="w-32 h-1 bg-slate-900 rounded-full overflow-hidden border border-slate-800">
             <div className="w-full h-full bg-sky-500 animate-pulse" />
@@ -246,6 +288,51 @@ export function App() {
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-sky-500 selection:text-white pb-16">
       <UpdateBanner />
       <ToastNotification />
+
+      {uploadProgress && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-white text-sm flex items-center gap-2">
+                {uploadProgress.step === 'hashing' && <Hash className="w-4 h-4 text-sky-400 animate-pulse" />}
+                {uploadProgress.step === 'checking_duplicates' && <Loader2 className="w-4 h-4 text-indigo-400 animate-spin" />}
+                {uploadProgress.step === 'uploading' && <ArrowUpCircle className="w-4 h-4 text-emerald-400 animate-bounce" />}
+                {uploadProgress.step === 'processing' && <Loader2 className="w-4 h-4 text-amber-400 animate-spin" />}
+                <span className="capitalize">{uploadProgress.step.replace('_', ' ')}...</span>
+              </h3>
+              <span className="text-xs font-mono bg-slate-800 border border-slate-700 text-slate-300 px-2 py-0.5 rounded-full">
+                {uploadProgress.progress}%
+              </span>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-sky-400 to-indigo-500 rounded-full transition-all duration-300"
+                style={{ width: `${uploadProgress.progress}%` }}
+              />
+            </div>
+
+            {/* Info Stats */}
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="bg-slate-950/45 p-3 rounded-lg border border-slate-800/40">
+                <div className="text-slate-400">Total Scanned</div>
+                <div className="text-base font-bold text-white mt-0.5">{uploadProgress.totalFiles}</div>
+              </div>
+              <div className="bg-slate-950/45 p-3 rounded-lg border border-slate-800/40">
+                <div className="text-slate-400">Duplicates Skipped</div>
+                <div className="text-base font-bold text-amber-400 mt-0.5">{uploadProgress.skippedCount}</div>
+              </div>
+            </div>
+            
+            {uploadProgress.uploadedCount > 0 && (
+              <div className="text-[11px] text-slate-400 text-center">
+                Uploading <span className="text-white font-medium">{uploadProgress.uploadedCount}</span> new files to the server
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <Header
         onScanClick={handleScanFolder}

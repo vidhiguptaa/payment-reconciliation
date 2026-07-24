@@ -5,9 +5,13 @@ const getBaseUrl = (): string => {
     return import.meta.env.VITE_API_BASE_URL;
   }
   if (typeof window !== 'undefined') {
-    if (window.location.port === '8000' || window.location.port === '') {
-      return window.location.origin;
+    if (window.location.port === '5173') {
+      return `${window.location.protocol}//${window.location.hostname}:8000`;
     }
+    if (window.location.hostname === 'localhost' || window.location.hostname === 'tauri.localhost' || window.location.protocol.startsWith('tauri')) {
+      return 'http://127.0.0.1:8000';
+    }
+    return window.location.origin;
   }
   return 'http://127.0.0.1:8000';
 };
@@ -429,7 +433,6 @@ export interface AppSettings {
   statements_dir: string;
   backup_dir: string;
   ocr_provider: string;
-  gemini_api_key: string;
   theme: string;
   auto_start_watcher: boolean;
   auto_reconcile: boolean;
@@ -493,7 +496,6 @@ export interface ComponentHealth {
   backend_running: boolean;
   watcher_running: boolean;
   database_connected: boolean;
-  gemini_configured: boolean;
   ocr_provider_available: boolean;
   db_path: string;
   config_path: string;
@@ -547,6 +549,157 @@ export const restoreBackup = async (filename: string): Promise<any> => {
 
 export const deleteBackup = async (filename: string): Promise<any> => {
   const response = await axios.delete(`${API_BASE_URL}/api/backups/${filename}`, { timeout: 5000 });
+  return response.data;
+};
+
+// --- Ingestion Flow Types ---
+export interface FileInfo {
+  filename: string;
+  size: number;
+  hash: string;
+}
+
+export interface CheckDuplicatesRequest {
+  files: FileInfo[];
+}
+
+export interface ExistingFileInfo {
+  hash: string;
+  screenshot_id: number;
+  imported_at: string;
+}
+
+export interface MissingFileInfo {
+  filename: string;
+  hash: string;
+}
+
+export interface InvalidFileInfo {
+  filename: string;
+  hash: string;
+  reason: string;
+}
+
+export interface DuplicateCheckResponse {
+  summary: {
+    total_checked: number;
+    existing_count: number;
+    missing_count: number;
+    invalid_count: number;
+  };
+  existing: ExistingFileInfo[];
+  missing: MissingFileInfo[];
+  invalid: InvalidFileInfo[];
+}
+
+export interface BatchUploadDetail {
+  id?: number | null;
+  filename: string;
+  status: string;
+  hash: string;
+  reason?: string | null;
+}
+
+export interface BatchUploadResponse {
+  batch_id: string;
+  imported_count: number;
+  details: BatchUploadDetail[];
+}
+
+export interface ExistingStatementFileInfo {
+  hash: string;
+  statement_file_id: number;
+  imported_at: string;
+}
+
+export interface CheckStatementDuplicatesResponse {
+  summary: {
+    total_checked: number;
+    existing_count: number;
+    missing_count: number;
+    invalid_count: number;
+  };
+  existing: ExistingStatementFileInfo[];
+  missing: MissingFileInfo[];
+  invalid: InvalidFileInfo[];
+}
+
+export interface BatchStatementUploadDetail {
+  id?: number | null;
+  filename: string;
+  status: string;
+  hash: string;
+  new_transactions: number;
+  reason?: string | null;
+}
+
+export interface BatchStatementUploadResponse {
+  processed_files: number;
+  details: BatchStatementUploadDetail[];
+}
+
+// --- Ingestion Flow API Endpoints ---
+export const checkScreenshotDuplicates = async (files: FileInfo[]): Promise<DuplicateCheckResponse> => {
+  const response = await axios.post<DuplicateCheckResponse>(
+    `${API_BASE_URL}/api/screenshots/check-duplicates`,
+    { files },
+    { timeout: 10000 }
+  );
+  return response.data;
+};
+
+export const uploadScreenshots = async (
+  files: File[], 
+  onUploadProgress?: (progressEvent: any) => void
+): Promise<BatchUploadResponse> => {
+  const formData = new FormData();
+  files.forEach((file) => {
+    formData.append('files', file);
+  });
+  
+  const response = await axios.post<BatchUploadResponse>(
+    `${API_BASE_URL}/api/screenshots/batch-upload`,
+    formData,
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      timeout: 60000,
+      onUploadProgress,
+    }
+  );
+  return response.data;
+};
+
+export const checkStatementDuplicates = async (files: FileInfo[]): Promise<CheckStatementDuplicatesResponse> => {
+  const response = await axios.post<CheckStatementDuplicatesResponse>(
+    `${API_BASE_URL}/api/statements/check-duplicates`,
+    { files },
+    { timeout: 10000 }
+  );
+  return response.data;
+};
+
+export const uploadStatements = async (
+  files: File[],
+  onUploadProgress?: (progressEvent: any) => void
+): Promise<BatchStatementUploadResponse> => {
+  const formData = new FormData();
+  files.forEach((file) => {
+    formData.append('files', file);
+  });
+  
+  const response = await axios.post<BatchStatementUploadResponse>(
+    `${API_BASE_URL}/api/statements/batch-upload`,
+    formData,
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      timeout: 60000,
+      onUploadProgress,
+    }
+  );
   return response.data;
 };
 

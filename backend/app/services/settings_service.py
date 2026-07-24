@@ -11,20 +11,20 @@ from pathlib import Path
 from typing import Any, Dict
 from dataclasses import dataclass, asdict
 
-from app.config import BASE_DIR, APP_DATA_DIR
+from app.config import BASE_DIR, DATA_ROOT
 
 logger = logging.getLogger(__name__)
 
-CONFIG_FILE = APP_DATA_DIR / "config.json"
+CONFIG_FILE = DATA_ROOT / "config.json"
 LEGACY_SETTINGS_FILE = BASE_DIR / "data" / "settings.json"
 
 
 @dataclass
 class UserSettings:
     # Folder paths
-    screenshots_dir: str = str(BASE_DIR / "data" / "payment-screenshots")
-    statements_dir: str = str(BASE_DIR / "data" / "account-statements")
-    backup_dir: str = str(APP_DATA_DIR / "backups")
+    screenshots_dir: str = str(DATA_ROOT / "payment-screenshots")
+    statements_dir: str = str(DATA_ROOT / "account-statements")
+    backup_dir: str = str(DATA_ROOT / "backups")
 
     # OCR Configuration
     ocr_provider: str = "paddleocr"

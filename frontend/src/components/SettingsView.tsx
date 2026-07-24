@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Settings2, FolderOpen, Eye, EyeOff, CheckCircle2, AlertTriangle,
+  Settings2, FolderOpen, CheckCircle2, AlertTriangle,
   RefreshCw, Save, Zap, Bell, FileSpreadsheet, ShieldCheck,
   HardDrive, Palette, FolderCheck, Activity, Clock, Database,
   Archive, RotateCcw, Trash2, Check, XCircle
@@ -94,7 +94,6 @@ export const SettingsView: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [watcherRunning, setWatcherRunning] = useState(false);
-  const [showApiKey, setShowApiKey] = useState(false);
 
   const [screenshotValidation, setScreenshotValidation] = useState<FolderValidation | null>(null);
   const [statementValidation, setStatementValidation] = useState<FolderValidation | null>(null);
@@ -309,8 +308,8 @@ export const SettingsView: React.FC = () => {
 
         <div className="space-y-2">
           <label className="text-xs font-semibold text-slate-300">OCR Provider</label>
-          <div className="grid grid-cols-3 gap-2">
-            {['paddleocr', 'gemini', 'tesseract'].map((provider) => (
+          <div className="grid grid-cols-2 gap-2">
+            {['paddleocr', 'tesseract'].map((provider) => (
               <button
                 key={provider}
                 onClick={() => updateField('ocr_provider', provider)}
@@ -320,38 +319,16 @@ export const SettingsView: React.FC = () => {
                     : 'bg-slate-900 border-slate-700 text-slate-400 hover:border-slate-600 hover:text-slate-300'
                 }`}
               >
-                {provider === 'paddleocr' ? 'PaddleOCR (Default Local)' : provider === 'gemini' ? 'Gemini Vision' : 'Tesseract'}
+                {provider === 'paddleocr' ? 'PaddleOCR (Default Local)' : 'Tesseract'}
               </button>
             ))}
           </div>
         </div>
 
-        {settings.ocr_provider === 'gemini' ? (
-          <div className="space-y-2 animate-fadeIn">
-            <label className="text-xs font-semibold text-slate-300">Gemini API Key</label>
-            <div className="relative">
-              <input
-                type={showApiKey ? 'text' : 'password'}
-                value={settings.gemini_api_key}
-                onChange={(e) => updateField('gemini_api_key', e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg pl-3 pr-10 py-2.5 focus:border-sky-500 focus:ring-1 focus:ring-sky-500 outline-none transition-colors placeholder:text-slate-600 font-mono"
-                placeholder="Enter your Gemini API key..."
-              />
-              <button
-                onClick={() => setShowApiKey(!showApiKey)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
-              >
-                {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-            <p className="text-[10px] text-slate-500">Required for Gemini Vision cloud OCR provider. Key stays local.</p>
-          </div>
-        ) : (
-          <div className="p-3 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-emerald-400 flex items-center space-x-2">
-            <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
-            <span>Running 100% locally on device. No API keys or internet connection required.</span>
-          </div>
-        )}
+        <div className="p-3 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-emerald-400 flex items-center space-x-2">
+          <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+          <span>Running 100% locally on device. No API keys or internet connection required.</span>
+        </div>
       </div>
 
       {/* Section 3: Health Monitoring */}
@@ -383,14 +360,7 @@ export const SettingsView: React.FC = () => {
                 <span>{healthInfo.components.watcher_running ? 'Active' : 'Idle'}</span>
               </span>
             </div>
-            <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex items-center justify-between">
-              <span className="text-slate-400">Gemini Key</span>
-              <span className={`flex items-center space-x-1 font-semibold ${healthInfo.components.gemini_configured ? 'text-emerald-400' : 'text-amber-400'}`}>
-                {healthInfo.components.gemini_configured ? <Check className="w-3.5 h-3.5" /> : <AlertTriangle className="w-3.5 h-3.5" />}
-                <span>{healthInfo.components.gemini_configured ? 'Set' : 'Missing'}</span>
-              </span>
-            </div>
-            <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex items-center justify-between col-span-2 sm:col-span-2">
+            <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex items-center justify-between col-span-2 sm:col-span-3">
               <span className="text-slate-400">OCR Provider</span>
               <span className="text-sky-400 font-semibold uppercase">{settings.ocr_provider}</span>
             </div>

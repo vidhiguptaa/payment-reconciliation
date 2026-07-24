@@ -140,6 +140,7 @@ fn spawn_backend(child_mutex: &Arc<Mutex<Option<Child>>>, resource_dir: &Path) {
 
     let mut cmd = Command::new(&python_exe);
     cmd.arg(&script_path);
+    cmd.current_dir(resource_dir);
 
     // Stream stdout and stderr so diagnostics and failure tracebacks are printed cleanly
     cmd.stdout(Stdio::inherit());

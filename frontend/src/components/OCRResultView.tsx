@@ -80,12 +80,11 @@ export const OCRResultView: React.FC<OCRResultViewProps> = ({ screenshotId }) =>
           <select
             onChange={(e) => handleRunOCRAgain(e.target.value)}
             disabled={running}
-            value={ocrResult?.provider || 'gemini'}
+            value={ocrResult?.provider || 'paddle'}
             className="bg-slate-900 border border-slate-700 text-xs text-slate-300 rounded-lg px-2.5 py-1 focus:outline-none focus:border-sky-500"
           >
-            <option value="gemini">Gemini Vision (Primary)</option>
+            <option value="paddle">PaddleOCR (Default)</option>
             <option value="tesseract">PyTesseract (Local)</option>
-            <option value="paddle">PaddleOCR (Fallback)</option>
           </select>
 
           <button

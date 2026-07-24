@@ -9,8 +9,9 @@
     "dev": "npm --prefix frontend run dev",
     "build": "npm --prefix frontend run build",
     "tauri": "tauri",
-    "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build"
+    "prepare:backend": "node scripts/prepare-backend.js",
+    "tauri:dev": "npm run prepare:backend && tauri dev",
+    "tauri:build": "npm run prepare:backend && tauri build"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.0.0"

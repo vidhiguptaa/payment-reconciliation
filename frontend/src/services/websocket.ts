@@ -12,8 +12,14 @@ class WebSocketService {
 
     if (import.meta.env.VITE_API_BASE_URL !== undefined && import.meta.env.VITE_API_BASE_URL !== '') {
       host = import.meta.env.VITE_API_BASE_URL.replace(/^http/, 'ws');
-    } else if (window.location.port === '8000' || window.location.port === '') {
-      host = `${protocol}//${window.location.host}`;
+    } else if (typeof window !== 'undefined') {
+      if (window.location.port === '5173') {
+        host = `${protocol}//${window.location.hostname}:8000`;
+      } else if (window.location.hostname === 'localhost' || window.location.hostname === 'tauri.localhost' || window.location.protocol.startsWith('tauri')) {
+        host = 'ws://127.0.0.1:8000';
+      } else {
+        host = `${protocol}//${window.location.host}`;
+      }
     } else {
       host = 'ws://127.0.0.1:8000';
     }

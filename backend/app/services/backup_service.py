@@ -11,7 +11,7 @@ from pathlib import Path
 from datetime import datetime, timezone
 from typing import List, Dict, Any
 
-from app.config import DB_PATH, APP_DATA_DIR
+from app.config import DB_PATH, DATA_ROOT
 from app.services.settings_service import settings_service
 
 logger = logging.getLogger(__name__)
@@ -25,7 +25,7 @@ class BackupService:
         if custom_dir:
             p = Path(custom_dir)
         else:
-            p = Path(APP_DATA_DIR) / "backups"
+            p = Path(DATA_ROOT) / "backups"
         p.mkdir(parents=True, exist_ok=True)
         return p
 

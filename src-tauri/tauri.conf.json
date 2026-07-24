@@ -27,9 +27,9 @@
   "bundle": {
     "active": true,
     "resources": [
-      "resources/python/**/*",
-      "../backend/app/**/*",
-      "../backend/config/**/*",
+      "resources/python",
+      "../backend/app",
+      "../backend/config",
       "../backend/requirements.txt",
       "../run_production.py"
     ],

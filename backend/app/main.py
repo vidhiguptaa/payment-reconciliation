@@ -34,7 +34,7 @@ setup_logging()
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     Base.metadata.create_all(bind=engine)
-    Path(settings.THUMBNAILS_DIR).mkdir(parents=True, exist_ok=True)
+    settings.THUMBNAILS_DIR.mkdir(parents=True, exist_ok=True)
 
     user_settings = settings_service.get_all()
     Path(user_settings["screenshots_dir"]).mkdir(parents=True, exist_ok=True)
@@ -88,7 +88,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-if Path(settings.THUMBNAILS_DIR).exists():
+if settings.THUMBNAILS_DIR.exists():
     app.mount("/thumbnails", StaticFiles(directory=settings.THUMBNAILS_DIR), name="thumbnails")
 
 app.include_router(screenshots_router)
@@ -142,7 +142,7 @@ def health_check(db: Session = Depends(get_db)) -> DetailedHealthResponse:
     )
 
 
-dist_dir = Path(settings.FRONTEND_DIST_DIR)
+dist_dir = settings.FRONTEND_DIST_DIR
 if dist_dir.exists():
     assets_dir = dist_dir / "assets"
     if assets_dir.exists():

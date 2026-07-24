@@ -56,8 +56,14 @@ target/
 *.msi
 *.exe
 
-# Python virtual environment (if embedded)
+# Python virtual environment (if embedded) and staging resources
 src-tauri/resources/python/
+src-tauri/resources/backend/
+src-tauri/resources/run_production.py
+src-tauri/resources/venv/
+
+# Local logs
+*.log
 
 # ==========================
 # macOS / Editor

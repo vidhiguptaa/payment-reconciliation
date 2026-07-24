@@ -16,9 +16,11 @@ services:
         value: paddle
 
       - key: CORS_ORIGINS
-        value: "https://tauri.localhost,tauri://localhost,http://tauri.localhost,http://localhost:1420,http://localhost:5173"
+        value: "https://tauri.localhost,tauri://localhost,http://tauri.localhost,http://localhost:1420,http://localhost:5173,http://localhost:5174,http://localhost:5175"
       - key: DATABASE_URL
         value: "sqlite:///./data/reconciliation.db"
+      - key: DATA_ROOT
+        value: "/opt/render/project/src/backend/data"
     disk:
       name: reconciliation-data
       mountPath: /opt/render/project/src/backend/data

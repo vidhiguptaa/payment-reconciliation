@@ -23,9 +23,9 @@ class StatementImportResult:
 class StatementImporterService:
     SUPPORTED_EXTENSIONS = {".csv", ".xlsx", ".xls"}
 
-    def __init__(self, db: Session, target_dir: str = settings.STATEMENTS_DIR) -> None:
+    def __init__(self, db: Session, target_dir: Path = settings.STATEMENTS_DIR) -> None:
         self.db = db
-        self.target_dir = Path(target_dir)
+        self.target_dir = target_dir
 
     def compute_sha256(self, filepath: Path) -> str:
         sha256 = hashlib.sha256()

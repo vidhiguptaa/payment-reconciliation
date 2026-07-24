@@ -36,7 +36,7 @@ export const HealthBadge: React.FC = () => {
     );
   }
 
-  if (error || !health || health.status !== 'ok') {
+  if (error || !health || (health.status !== 'ok' && health.status !== 'degraded')) {
     return (
       <div className="flex items-center space-x-2 bg-rose-950/60 border border-rose-800 text-rose-300 text-xs px-3 py-1.5 rounded-full shadow-sm">
         <AlertCircle className="w-3.5 h-3.5 text-rose-400" />

@@ -1,12 +1,12 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   StatementFileItem,
   StatementTransactionItem,
   StatementImportSummary,
   getStatements,
-  importStatements,
   getStatementTransactions
 } from '../services/api';
+import { processStatementFolder, ProcessingProgress } from '../services/folderPicker';
 import {
   FileSpreadsheet,
   DownloadCloud,
@@ -16,23 +16,27 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
-  X
+  X,
+  Loader2,
+  Hash,
+  ArrowUpCircle
 } from 'lucide-react';
 
 export const BankStatementsView: React.FC = () => {
-  const [statementFiles, setStatementFiles] = React.useState<StatementFileItem[]>([]);
-  const [loading, setLoading] = React.useState<boolean>(true);
-  const [importing, setImporting] = React.useState<boolean>(false);
-  const [importSummary, setImportSummary] = React.useState<StatementImportSummary | null>(null);
-  const [error, setError] = React.useState<string | null>(null);
+  const [statementFiles, setStatementFiles] = useState<StatementFileItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [importing, setImporting] = useState<boolean>(false);
+  const [importSummary, setImportSummary] = useState<StatementImportSummary | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<ProcessingProgress | null>(null);
 
-  const [selectedFile, setSelectedFile] = React.useState<StatementFileItem | null>(null);
-  const [transactions, setTransactions] = React.useState<StatementTransactionItem[]>([]);
-  const [txLoading, setTxLoading] = React.useState<boolean>(false);
-  const [search, setSearch] = React.useState<string>('');
-  const [page, setPage] = React.useState<number>(1);
-  const [totalPages, setTotalPages] = React.useState<number>(1);
-  const [totalTxs, setTotalTxs] = React.useState<number>(0);
+  const [selectedFile, setSelectedFile] = useState<StatementFileItem | null>(null);
+  const [transactions, setTransactions] = useState<StatementTransactionItem[]>([]);
+  const [txLoading, setTxLoading] = useState<boolean>(false);
+  const [search, setSearch] = useState<string>('');
+  const [page, setPage] = useState<number>(1);
+  const [totalPages, setTotalPages] = useState<number>(1);
+  const [totalTxs, setTotalTxs] = useState<number>(0);
 
   const fetchFiles = async () => {
     setLoading(true);
@@ -52,16 +56,41 @@ export const BankStatementsView: React.FC = () => {
   }, []);
 
   const handleImport = async () => {
-    setImporting(true);
     setError(null);
+    setImportSummary(null);
     try {
-      const summary = await importStatements();
-      setImportSummary(summary);
-      fetchFiles();
+      const result = await processStatementFolder(
+        (progress) => {
+          setUploadProgress(progress);
+        }
+      );
+      
+      if (result.total === 0) {
+        setUploadProgress(null);
+        return;
+      }
+      
+      setImporting(true);
+      await fetchFiles();
+      
+      setImportSummary({
+        total_scanned: result.total,
+        new_imported: result.uploaded,
+        skipped_duplicates: result.skipped,
+        unsupported_ignored: 0,
+        failed_errors: 0,
+        details: []
+      });
+      
+      setTimeout(async () => {
+        setImporting(false);
+        setUploadProgress(null);
+        await fetchFiles();
+      }, 2000);
+      
     } catch (err: any) {
       setError(err.message || 'Import failed');
-    } finally {
-      setImporting(false);
+      setUploadProgress(null);
     }
   };
 
@@ -115,6 +144,51 @@ export const BankStatementsView: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {uploadProgress && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl space-y-4 animate-slideIn">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-white text-sm flex items-center gap-2">
+                {uploadProgress.step === 'hashing' && <Hash className="w-4 h-4 text-sky-400 animate-pulse" />}
+                {uploadProgress.step === 'checking_duplicates' && <Loader2 className="w-4 h-4 text-indigo-400 animate-spin" />}
+                {uploadProgress.step === 'uploading' && <ArrowUpCircle className="w-4 h-4 text-emerald-400 animate-bounce" />}
+                {uploadProgress.step === 'processing' && <Loader2 className="w-4 h-4 text-amber-400 animate-spin" />}
+                <span className="capitalize">{uploadProgress.step.replace('_', ' ')}...</span>
+              </h3>
+              <span className="text-xs font-mono bg-slate-800 border border-slate-700 text-slate-300 px-2 py-0.5 rounded-full">
+                {uploadProgress.progress}%
+              </span>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full transition-all duration-300"
+                style={{ width: `${uploadProgress.progress}%` }}
+              />
+            </div>
+
+            {/* Info Stats */}
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="bg-slate-950/45 p-3 rounded-lg border border-slate-800/40">
+                <div className="text-slate-400">Total Scanned</div>
+                <div className="text-base font-bold text-white mt-0.5">{uploadProgress.totalFiles}</div>
+              </div>
+              <div className="bg-slate-950/45 p-3 rounded-lg border border-slate-800/40">
+                <div className="text-slate-400">Duplicates Skipped</div>
+                <div className="text-base font-bold text-amber-400 mt-0.5">{uploadProgress.skippedCount}</div>
+              </div>
+            </div>
+            
+            {uploadProgress.uploadedCount > 0 && (
+              <div className="text-[11px] text-slate-400 text-center">
+                Uploading <span className="text-white font-medium">{uploadProgress.uploadedCount}</span> new files to the server
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Action Header */}
       <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-wrap items-center justify-between gap-4">
         <div>

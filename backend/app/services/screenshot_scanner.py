@@ -30,10 +30,10 @@ class ScanResult:
         }
 
 class ScreenshotScannerService:
-    def __init__(self, db: Session, target_dir: Optional[str] = None) -> None:
+    def __init__(self, db: Session, target_dir: Optional[Path] = None) -> None:
         self.db = db
-        self.target_dir = Path(target_dir or settings.SCREENSHOTS_DIR)
-        self.thumbnails_dir = Path(settings.THUMBNAILS_DIR)
+        self.target_dir = target_dir or settings.SCREENSHOTS_DIR
+        self.thumbnails_dir = settings.THUMBNAILS_DIR
 
     def _ensure_directories(self) -> None:
         self.target_dir.mkdir(parents=True, exist_ok=True)
