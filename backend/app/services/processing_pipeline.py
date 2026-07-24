@@ -76,6 +76,8 @@ class ProcessingPipelineService:
         try:
             # Stage 1: OCR
             ocr_result = self._execute_stage_ocr(job, screenshot)
+            if ocr_result.status == "FAILED":
+                raise RuntimeError(f"OCR failed: {ocr_result.error_message or 'Unknown OCR error'}")
 
             # Stage 2: Transaction Extraction
             extracted_tx = self._execute_stage_extraction(job, screenshot, ocr_result)

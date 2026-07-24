@@ -165,7 +165,7 @@ def get_reconciliation_detail(id: int, db: Session = Depends(get_db)):
     stmt = db.query(StatementTransaction).filter(StatementTransaction.id == match_record.statement_transaction_id).first() if match_record.statement_transaction_id else None
 
     comparison = ExplanationGenerator.get_field_comparison(ext, stmt)
-    image_url = f"/api/screenshots/{ext.screenshot_id}/file" if ext.screenshot_id else ""
+    image_url = f"/api/screenshots/{ext.screenshot_id}/image" if ext.screenshot_id else ""
 
     return ReconciliationDetailResponse(
         match=format_match(match_record),

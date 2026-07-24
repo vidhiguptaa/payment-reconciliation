@@ -56,7 +56,10 @@ class PaddleOCRProvider(BaseOCRProvider):
 
         try:
             from paddleocr import PaddleOCR  # type: ignore
-            ocr = PaddleOCR(use_angle_cls=True, lang=self.lang, show_log=False)
+            import logging
+            logging.getLogger("ppocr").setLevel(logging.ERROR)
+            
+            ocr = PaddleOCR(use_angle_cls=True, lang=self.lang)
             res = ocr.ocr(image_path, cls=True)
 
             lines = []
