@@ -10,8 +10,13 @@ from urllib.parse import urlparse
 ocr_lock = threading.Lock()
 ocr_instance = None
 
-def get_ocr_instance():
+def get_ocr_instance(blocking=True):
     global ocr_instance
+    if ocr_instance is not None:
+        return ocr_instance
+    if not blocking:
+        if ocr_lock.locked():
+            return None
     with ocr_lock:
         if ocr_instance is None:
             print("Initializing PaddleOCR engine...")
@@ -23,7 +28,7 @@ def get_ocr_instance():
 def warm_up_ocr():
     print("Background thread: Warming up PaddleOCR...")
     try:
-        get_ocr_instance()
+        get_ocr_instance(blocking=True)
         print("Background thread: PaddleOCR warm-up complete.")
     except Exception as e:
         print(f"Background thread: Error during PaddleOCR warm-up: {e}")
@@ -35,6 +40,16 @@ class OCRRequestHandler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         # Silence standard HTTP logging to keep console clean, or log explicitly
         print(f"[OCR-Server] {self.address_string()} - - [{self.log_date_time_string()}] {format % args}")
+
+    def do_GET(self):
+        # Respond with 200 OK for health check pings
+        self.send_json_response(200, {"status": "healthy"})
+
+    def do_HEAD(self):
+        # Respond with 200 OK for HEAD health checks
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json')
+        self.end_headers()
 
     def do_POST(self):
         parsed_url = urlparse(self.path)
@@ -79,7 +94,10 @@ class OCRRequestHandler(BaseHTTPRequestHandler):
                 out_file.write(response.read())
 
             # 2. Run PaddleOCR
-            ocr = get_ocr_instance()
+            ocr = get_ocr_instance(blocking=False)
+            if ocr is None:
+                self.send_error_response(503, "OCR engine is currently warming up in the background. Please retry in a few seconds.")
+                return
             print(f"Running PaddleOCR on file: {temp_file_path}")
             result = ocr.ocr(temp_file_path)
 
