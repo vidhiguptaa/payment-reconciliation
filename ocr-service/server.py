@@ -6,6 +6,9 @@ import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse
 
+# Disable online connectivity checks to speed up startup
+os.environ['PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK'] = 'True'
+
 # Lock to ensure thread-safe initialization of the OCR instance
 ocr_lock = threading.Lock()
 ocr_instance = None
@@ -19,9 +22,14 @@ def get_ocr_instance(blocking=True):
             return None
     with ocr_lock:
         if ocr_instance is None:
-            print("Initializing PaddleOCR engine...")
+            print("Initializing PaddleOCR engine (PP-OCRv4, CPU, single-thread)...")
             from paddleocr import PaddleOCR
-            ocr_instance = PaddleOCR(use_textline_orientation=True, lang='en')
+            ocr_instance = PaddleOCR(
+                ocr_version='PP-OCRv4',
+                lang='en',
+                use_angle_cls=False,
+                cpu_threads=1
+            )
             print("PaddleOCR engine initialized successfully.")
         return ocr_instance
 

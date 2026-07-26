@@ -23,7 +23,7 @@ export class OcrService {
       throw new Error('PaddleOCR service integration requires a Cloudinary image URL.');
     }
 
-    const maxRetries = 3;
+    const maxRetries = 12; // Allow up to 1 minute for warming up
     const retryDelay = 5000; // 5 seconds
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
