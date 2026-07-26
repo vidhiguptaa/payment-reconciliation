@@ -67,7 +67,7 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 // Initialize database and start the server
 async function startServer() {
   try {
-    console.log('Connecting to SQLite database via Prisma...');
+    console.log('Connecting to PostgreSQL database via Prisma...');
     await prisma.$connect();
     console.log('Database connected successfully.');
 
