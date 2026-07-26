@@ -1,16 +1,16 @@
 import axios from 'axios';
-import { 
-  AuthResponse, 
-  UserDto, 
-  PaymentImageDto, 
-  BankStatementDto, 
-  ReconciliationReportDto, 
-  ReportDetailDto, 
-  ReconciliationMatchDto 
+import {
+  AuthResponse,
+  UserDto,
+  PaymentImageDto,
+  BankStatementDto,
+  ReconciliationReportDto,
+  ReportDetailDto,
+  ReconciliationMatchDto
 } from '../shared/types';
 
 // Set up the API URL pointing to the Node Express server
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:10000';
 
 const apiClient = axios.create({
   baseURL: API_URL,
