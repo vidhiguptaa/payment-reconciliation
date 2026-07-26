@@ -1,0 +1,137 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                    String                 @id @default(uuid())
+  email                 String                 @unique
+  password              String
+  createdAt             DateTime               @default(now())
+  paymentImages         PaymentImage[]
+  bankStatements        BankStatement[]
+  reconciliationReports ReconciliationReport[]
+}
+
+model PaymentImage {
+  id                  String               @id @default(uuid())
+  filename            String
+  cloudinaryUrl       String
+  cloudinaryPublicId  String
+  fileHash            String               @unique
+  fileSize            Int
+  status              String               @default("PENDING") // PENDING, PROCESSING, PROCESSED, FAILED
+  uploadedAt          DateTime             @default(now())
+  
+  // OCR Extracted Fields (null until PROCESSED)
+  amount              Float?
+  currency            String               @default("INR")
+  transactionDate     String?              // YYYY-MM-DD
+  transactionTime     String?              // HH:MM:SS
+  referenceNumber     String?
+  utrNumber           String?
+  transactionId       String?
+  senderName          String?
+  receiverName        String?
+  transactionType     String?              @default("UPI")
+  paymentStatus       String?              @default("SUCCESS")
+  
+  userId              String
+  user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  ocrResults          OCRResult[]
+  matches             ReconciliationMatch[]
+}
+
+model OCRResult {
+  id                  String               @id @default(uuid())
+  paymentImageId      String
+  paymentImage        PaymentImage         @relation(fields: [paymentImageId], references: [id], onDelete: Cascade)
+  provider            String               // tesseract, ocr_space, gemini
+  rawText             String
+  rawJson             String
+  confidence          Float
+  processingTimeMs    Int
+  status              String               // SUCCESS, FAILED
+  errorMessage        String?
+  createdAt           DateTime             @default(now())
+}
+
+model BankStatement {
+  id                  String               @id @default(uuid())
+  filename            String
+  cloudinaryUrl       String
+  cloudinaryPublicId  String
+  fileHash            String               @unique
+  importedAt          DateTime             @default(now())
+  
+  userId              String
+  user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  transactions        StatementTransaction[]
+}
+
+model StatementTransaction {
+  id                  String               @id @default(uuid())
+  statementFileId     String
+  statementFile       BankStatement        @relation(fields: [statementFileId], references: [id], onDelete: Cascade)
+  
+  transactionDate     String?              // YYYY-MM-DD
+  valueDate           String?              // YYYY-MM-DD
+  description         String
+  referenceNumber     String?
+  utrNumber           String?
+  transactionId       String?
+  debit               Float?
+  credit              Float?
+  amount              Float                // Positive for Credit, Negative for Debit
+  balance             Float?
+  currency            String               @default("INR")
+  bankName            String?
+  rawRowJson          String
+  createdAt           DateTime             @default(now())
+  
+  matches             ReconciliationMatch[]
+}
+
+model ReconciliationReport {
+  id                  String               @id @default(uuid())
+  name                String
+  createdAt           DateTime             @default(now())
+  
+  matchedCount        Int
+  possibleCount       Int
+  needsReviewCount    Int
+  unmatchedCount      Int
+  totalCount          Int
+  
+  userId              String
+  user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  matches             ReconciliationMatch[]
+}
+
+model ReconciliationMatch {
+  id                      String               @id @default(uuid())
+  reportId                String
+  report                  ReconciliationReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  
+  paymentImageId          String
+  paymentImage            PaymentImage         @relation(fields: [paymentImageId], references: [id], onDelete: Cascade)
+  
+  statementTransactionId  String?
+  statementTransaction    StatementTransaction? @relation(fields: [statementTransactionId], references: [id], onDelete: SetNull)
+  
+  matchStatus             String               // Matched, Possible Match, Needs Review, Unmatched
+  matchType               String               // AUTO_MATCHED, MANUALLY_MATCHED
+  confidenceScore         Float
+  matchReasonJson         String               // JSON array
+  fieldScoresJson         String               // JSON object
+  
+  createdAt               DateTime             @default(now())
+  updatedAt               DateTime             @updatedAt
+}

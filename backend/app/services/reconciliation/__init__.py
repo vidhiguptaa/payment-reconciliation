@@ -1,3 +1,0 @@
-"""
-Transaction Reconciliation Engine Package
-"""
