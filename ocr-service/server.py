@@ -5,16 +5,14 @@ import urllib.request
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse
 
-# Import PaddleOCR lazily on first OCR call to make server startup instant
-ocr_instance = None
+# Import PaddleOCR and initialize the engine eagerly on startup.
+# This prevents the first request from timing out while downloading/loading the model.
+print("Initializing PaddleOCR engine...")
+from paddleocr import PaddleOCR
+ocr_instance = PaddleOCR(use_textline_orientation=True, lang='en')
+print("PaddleOCR engine initialized successfully.")
 
 def get_ocr_instance():
-    global ocr_instance
-    if ocr_instance is None:
-        print("Initializing PaddleOCR engine...")
-        from paddleocr import PaddleOCR
-        ocr_instance = PaddleOCR(use_textline_orientation=True, lang='en')
-        print("PaddleOCR engine initialized successfully.")
     return ocr_instance
 
 class OCRRequestHandler(BaseHTTPRequestHandler):

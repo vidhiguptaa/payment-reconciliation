@@ -31,7 +31,7 @@ export class OcrService {
         { url },
         {
           headers: { 'Content-Type': 'application/json' },
-          timeout: 30000, // Allow 30 seconds for download and OCR inference
+          timeout: 180000, // Allow 180 seconds (3 minutes) for service wakeup, download, and OCR inference
         }
       );
 
