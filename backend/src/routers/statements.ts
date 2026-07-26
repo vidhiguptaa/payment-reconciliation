@@ -328,7 +328,7 @@ router.get('/', requireAuth, async (req: AuthenticatedRequest, res: Response) =>
       orderBy: { importedAt: 'desc' },
     });
 
-    const formatted = statements.map(s => ({
+    const formatted = statements.map((s: any) => ({
       id: s.id,
       filename: s.filename,
       cloudinaryUrl: s.cloudinaryUrl,

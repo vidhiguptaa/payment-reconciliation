@@ -150,19 +150,19 @@ router.get('/reports/:id', requireAuth, async (req: AuthenticatedRequest, res: R
     // Defined as: transactions that are not currently matched/linked to any successful matches in this report
     const matchedStatementTxIds = new Set(
       matches
-        .filter(m => m.statementTransactionId !== null && m.matchStatus !== MatchStatus.UNMATCHED)
-        .map(m => m.statementTransactionId as string)
+        .filter((m: any) => m.statementTransactionId !== null && m.matchStatus !== MatchStatus.UNMATCHED)
+        .map((m: any) => m.statementTransactionId as string)
     );
 
     const unmatchedTransactions = allStatementTxs.filter(
-      tx => !matchedStatementTxIds.has(tx.id)
+      (tx: any) => !matchedStatementTxIds.has(tx.id)
     );
 
     // 4. Find unmatched payment images in this report
     // In our model, unmatched images are matches where matchStatus = 'Unmatched' or statementTransactionId = null
     const unmatchedImages = matches
-      .filter(m => m.matchStatus === MatchStatus.UNMATCHED || !m.statementTransactionId)
-      .map(m => m.paymentImage);
+      .filter((m: any) => m.matchStatus === MatchStatus.UNMATCHED || !m.statementTransactionId)
+      .map((m: any) => m.paymentImage);
 
     return res.json({
       report,
