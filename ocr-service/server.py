@@ -14,9 +14,9 @@ def get_ocr_instance():
     global ocr_instance
     with ocr_lock:
         if ocr_instance is None:
-            print("Initializing PaddleOCR engine (CPU mode)...")
+            print("Initializing PaddleOCR engine...")
             from paddleocr import PaddleOCR
-            ocr_instance = PaddleOCR(use_textline_orientation=True, lang='en', use_gpu=False)
+            ocr_instance = PaddleOCR(use_textline_orientation=True, lang='en')
             print("PaddleOCR engine initialized successfully.")
         return ocr_instance
 
