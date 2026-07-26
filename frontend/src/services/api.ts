@@ -10,7 +10,7 @@ import {
 } from '../shared/types';
 
 // Set up the API URL pointing to the Node Express server
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:10000';
+const API_URL = import.meta.env.VITE_API_URL || 'https://payment-reconciliation-production.up.railway.app/';
 
 const apiClient = axios.create({
   baseURL: API_URL,
