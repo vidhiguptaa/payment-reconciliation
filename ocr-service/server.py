@@ -2,18 +2,34 @@ import os
 import json
 import tempfile
 import urllib.request
+import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse
 
-# Import PaddleOCR and initialize the engine eagerly on startup.
-# This prevents the first request from timing out while downloading/loading the model.
-print("Initializing PaddleOCR engine...")
-from paddleocr import PaddleOCR
-ocr_instance = PaddleOCR(use_textline_orientation=True, lang='en')
-print("PaddleOCR engine initialized successfully.")
+# Lock to ensure thread-safe initialization of the OCR instance
+ocr_lock = threading.Lock()
+ocr_instance = None
 
 def get_ocr_instance():
-    return ocr_instance
+    global ocr_instance
+    with ocr_lock:
+        if ocr_instance is None:
+            print("Initializing PaddleOCR engine (CPU mode)...")
+            from paddleocr import PaddleOCR
+            ocr_instance = PaddleOCR(use_textline_orientation=True, lang='en', use_gpu=False)
+            print("PaddleOCR engine initialized successfully.")
+        return ocr_instance
+
+def warm_up_ocr():
+    print("Background thread: Warming up PaddleOCR...")
+    try:
+        get_ocr_instance()
+        print("Background thread: PaddleOCR warm-up complete.")
+    except Exception as e:
+        print(f"Background thread: Error during PaddleOCR warm-up: {e}")
+
+# Start warm-up in a background thread when the script runs to prevent port-binding delay
+threading.Thread(target=warm_up_ocr, daemon=True).start()
 
 class OCRRequestHandler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
